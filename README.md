@@ -131,6 +131,13 @@ carrinho/recibo foi desenhado como uma "nota" com corte serrilhado — uma
 referência direta ao próprio fluxo do site (pedido → recibo → WhatsApp) e
 aos blocos de notas pontilhados/pautados vendidos na loja.
 
+## 📄 Licença
+
+Este projeto usa uso restrito ("All Rights Reserved") — veja o arquivo
+[`LICENSE`](./LICENSE). O código fica visível no GitHub para consulta e
+portfólio, mas não pode ser copiado, reutilizado ou redistribuído sem
+autorização do autor.
+
 ## ✅ Próximos passos sugeridos
 
 - Contratar uma hospedagem simples para o `backend/` quando quiser dados
