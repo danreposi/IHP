@@ -1,0 +1,20 @@
+[
+  {
+    "id": "cat-impressoes",
+    "name": "Impressões",
+    "icon": "🖨️",
+    "order": 0
+  },
+  {
+    "id": "cat-papelaria",
+    "name": "Papelaria",
+    "icon": "📓",
+    "order": 1
+  },
+  {
+    "id": "cat-materiais",
+    "name": "Materiais",
+    "icon": "✏️",
+    "order": 2
+  }
+]
