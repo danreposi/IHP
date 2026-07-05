@@ -5,7 +5,7 @@
     "description": "Impressão avulsa por folha A4. Escolha o tipo de impressão.",
     "price": 0.5,
     "categoryId": "cat-impressoes",
-    "image": "🖨️",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/8/87/Paper_sheet.jpg",
     "variations": [
       "Preto e Branco",
       "Colorida",
@@ -15,112 +15,5 @@
     "featured": true,
     "views": 0,
     "order": 0
-  },
-  {
-    "id": "prod-bloco-notas",
-    "name": "Bloco de Notas",
-    "description": "Bloco de notas 80 folhas, capa resistente.",
-    "price": 12.9,
-    "categoryId": "cat-papelaria",
-    "image": "📓",
-    "variations": [
-      "Pautado",
-      "Pontilhado",
-      "Quadriculado"
-    ],
-    "stock": 24,
-    "featured": true,
-    "views": 0,
-    "order": 1
-  },
-  {
-    "id": "prod-caderno",
-    "name": "Caderno Universitário",
-    "description": "10 matérias, capa dura, 200 folhas.",
-    "price": 34.9,
-    "categoryId": "cat-papelaria",
-    "image": "📔",
-    "variations": [
-      "Pautado",
-      "Quadriculado"
-    ],
-    "stock": 10,
-    "featured": false,
-    "views": 0,
-    "order": 2
-  },
-  {
-    "id": "prod-borracha",
-    "name": "Borracha",
-    "description": "Borracha macia, não mancha o papel.",
-    "price": 2.5,
-    "categoryId": "cat-materiais",
-    "image": "🧼",
-    "variations": [],
-    "stock": 40,
-    "featured": false,
-    "views": 0,
-    "order": 3
-  },
-  {
-    "id": "prod-lapis",
-    "name": "Lápis Grafite",
-    "description": "Lápis HB nº2, ideal para uso diário.",
-    "price": 1.8,
-    "categoryId": "cat-materiais",
-    "image": "✏️",
-    "variations": [],
-    "stock": 60,
-    "featured": false,
-    "views": 0,
-    "order": 4
-  },
-  {
-    "id": "prod-caneta",
-    "name": "Caneta Esferográfica",
-    "description": "Escrita macia, ponta 1.0mm.",
-    "price": 2.9,
-    "categoryId": "cat-materiais",
-    "image": "🖊️",
-    "variations": [
-      "Azul",
-      "Preta",
-      "Vermelha"
-    ],
-    "stock": 50,
-    "featured": true,
-    "views": 0,
-    "order": 5
-  },
-  {
-    "id": "prod-marca-texto",
-    "name": "Marca-texto",
-    "description": "Cores vibrantes, ponta chanfrada.",
-    "price": 4.5,
-    "categoryId": "cat-materiais",
-    "image": "🖍️",
-    "variations": [
-      "Amarelo",
-      "Verde",
-      "Rosa",
-      "Laranja"
-    ],
-    "stock": 30,
-    "featured": false,
-    "views": 0,
-    "order": 6
-  },
-  {
-    "id": "prod-cola",
-    "name": "Cola Bastão",
-    "description": "Cola bastão 20g, seca rápido e não escorre.",
-    "price": 5.9,
-    "categoryId": "cat-materiais",
-    "image": "🧴",
-    "variations": [],
-    "stock": 3,
-    "featured": false,
-    "views": 0,
-    "order": 7
   }
 ]
