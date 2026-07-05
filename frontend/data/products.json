@@ -5,7 +5,7 @@
     "description": "Impressão avulsa por folha A4. Escolha o tipo de impressão.",
     "price": 0.5,
     "categoryId": "cat-impressoes",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/8/87/Paper_sheet.jpg",
+    "image": "https://img.kalunga.com.br/fotosdeprodutos/476102z.jpg",
     "variations": [
       "Preto e Branco",
       "Colorida",
@@ -13,7 +13,7 @@
     ],
     "stock": null,
     "featured": true,
-    "views": 0,
+    "views": 1,
     "order": 0
   }
 ]
