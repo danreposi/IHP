@@ -36,7 +36,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Alterado para '.' para garantir que todos os arquivos sejam lidos
-          path: "."
+          path: "./frontend"
 
       - name: Deploy to GitHub Pages
         id: deployment
