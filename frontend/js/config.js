@@ -10,7 +10,7 @@
      O site passa a usar o backend + banco de dados automaticamente.
    ========================================================== */
 const CONFIG = {
-  API_BASE_URL: "", // "" = modo local (localStorage) | "https://..." = modo backend
+  API_BASE_URL: "https://ihp-ebf0.onrender.com", // "" = modo local (localStorage) | "https://..." = modo backend
   WHATSAPP_NUMBER_FALLBACK: "5500000000000", // usado só se não houver nada salvo ainda
   STORE_NAME: "Papelaria & Impressões",
 };
