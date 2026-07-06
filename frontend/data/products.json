@@ -1,77 +1,53 @@
 [
   {
     "id": "prod-impressao",
-    "name": "Impressão Preto e Branco (Acima de 20)",
+    "name": "Impressão de Documento",
     "description": "Impressão avulsa por folha A4.",
-    "price": 0.75,
+    "price": 1,
     "categoryId": "cat-impressoes",
     "image": "🖨️",
     "variations": [
-      "Preto e Branco"
+      "Preto e Branco",
+      "Colorida",
+      "Fotográfica"
     ],
     "stock": null,
-    "featured": false,
+    "featured": true,
     "views": 0,
     "order": 0
   },
   {
-    "id": "prod-mr8kuuel-vxvulq",
-    "views": 0,
-    "order": 1,
-    "name": "Impressão Preto e Branco (Abaixo de 20)",
-    "description": "Impressão avulsa por folha A4.",
-    "price": 1,
-    "categoryId": "cat-impressoes",
-    "image": "🖨️",
-    "stock": null,
+    "id": "prod-bloco-notas",
+    "name": "Bloco de Notas",
+    "description": "Bloco de notas 80 folhas, capa resistente.",
+    "price": 12.9,
+    "categoryId": "cat-papelaria",
+    "image": "📓",
     "variations": [
-      "Preto e Branco"
+      "Pautado",
+      "Pontilhado",
+      "Quadriculado"
     ],
-    "featured": false
+    "stock": 24,
+    "featured": true,
+    "views": 0,
+    "order": 1
   },
   {
-    "id": "prod-mr8kwtoc-lz79z0",
-    "views": 0,
-    "order": 2,
-    "name": "Impressão Colorida",
-    "description": "Impressão avulsa por folha A4.",
-    "price": 1,
-    "categoryId": "cat-impressoes",
-    "image": "🖨️",
-    "stock": null,
+    "id": "prod-caneta",
+    "name": "Caneta Esferográfica",
+    "description": "Escrita macia, ponta 1.0mm.",
+    "price": 2.9,
+    "categoryId": "cat-materiais",
+    "image": "🖊️",
     "variations": [
-      "Colorida"
+      "Azul",
+      "Preta",
+      "Vermelha"
     ],
-    "featured": false
-  },
-  {
-    "id": "prod-mr8kxs1g-kst1un",
+    "stock": 50,
+    "featured": true,
     "views": 0,
-    "order": 3,
-    "name": "Xerox",
-    "description": "Impressão avulsa por folha A4.",
-    "price": 0.5,
-    "categoryId": "cat-impressoes",
-    "image": "🖨️",
-    "stock": null,
-    "variations": [
-      "Preto e Branco"
-    ],
-    "featured": false
-  },
-  {
-    "id": "prod-mr8kyhte-cw2nxf",
-    "views": 0,
-    "order": 4,
-    "name": "Xerox Colorido",
-    "description": "Impressão em folha A4.",
-    "price": 1,
-    "categoryId": "cat-impressoes",
-    "image": "🖨️",
-    "stock": null,
-    "variations": [
-      "Colorida"
-    ],
-    "featured": false
+    "order": 2
   }
 ]
