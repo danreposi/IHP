@@ -1,53 +1,101 @@
 [
   {
     "id": "prod-impressao",
-    "name": "Impressão de Documento",
-    "description": "Impressão avulsa por folha A4.",
+    "name": "Impressão Preto e Branco",
+    "description": "Impressão preto e branco por folha A4.",
     "price": 1,
     "categoryId": "cat-impressoes",
-    "image": "🖨️",
+    "image": "https://i.imgur.com/k4aFHl2.png",
     "variations": [
-      "Preto e Branco",
-      "Colorida",
-      "Fotográfica"
+      "preto e branco",
+      "impressão"
     ],
     "stock": null,
-    "featured": true,
-    "views": 0,
+    "featured": false,
+    "views": 2,
     "order": 0
   },
   {
-    "id": "prod-bloco-notas",
-    "name": "Bloco de Notas",
-    "description": "Bloco de notas 80 folhas, capa resistente.",
-    "price": 12.9,
-    "categoryId": "cat-papelaria",
-    "image": "📓",
-    "variations": [
-      "Pautado",
-      "Pontilhado",
-      "Quadriculado"
-    ],
-    "stock": 24,
-    "featured": true,
+    "id": "prod-mr9gwusi-sge82l",
     "views": 0,
-    "order": 1
+    "order": 1,
+    "name": "Impressão Colorido",
+    "description": "Impressão colorida por folha A4.",
+    "price": 3,
+    "categoryId": "cat-impressoes",
+    "image": "https://i.imgur.com/HAsNX4P.png",
+    "stock": null,
+    "variations": [
+      "impressão colorido",
+      "colorida"
+    ],
+    "featured": false
   },
   {
-    "id": "prod-caneta",
-    "name": "Caneta Esferográfica",
-    "description": "Escrita macia, ponta 1.0mm.",
-    "price": 2.9,
-    "categoryId": "cat-materiais",
-    "image": "🖊️",
-    "variations": [
-      "Azul",
-      "Preta",
-      "Vermelha"
-    ],
-    "stock": 50,
-    "featured": true,
+    "id": "prod-mr9gyk1v-tejt3z",
     "views": 0,
-    "order": 2
+    "order": 2,
+    "name": "Xerox Preto e Branco",
+    "description": "Cópia em preto e branco.",
+    "price": 0.75,
+    "categoryId": "cat-impressoes",
+    "image": "https://i.imgur.com/TzP9luj.png",
+    "stock": null,
+    "variations": [
+      "xerox preto",
+      "xerox",
+      "preto",
+      "xerox preto e branco",
+      "cópia"
+    ],
+    "featured": false
+  },
+  {
+    "id": "prod-mr9h081p-f44jhr",
+    "views": 0,
+    "order": 3,
+    "name": "Xerox Colorido",
+    "description": "Cópia em cores.",
+    "price": 1.5,
+    "categoryId": "cat-impressoes",
+    "image": "https://i.imgur.com/nM6xyiI.png",
+    "stock": null,
+    "variations": [
+      "xerox colorido",
+      "cores",
+      "cópia"
+    ],
+    "featured": false
+  },
+  {
+    "id": "prod-mr9h2bkp-m5rlis",
+    "views": 0,
+    "order": 4,
+    "name": "Foto 10x15 cm",
+    "description": "Foto no tamanho 10x15 cm.",
+    "price": 3.5,
+    "categoryId": "cat-mr9gsd1n-ysckq2",
+    "image": "https://i.imgur.com/NCwDIIN.png",
+    "stock": null,
+    "variations": [
+      "foto",
+      "foto 10x15"
+    ],
+    "featured": false
+  },
+  {
+    "id": "prod-mr9h34vz-g3vh9r",
+    "views": 0,
+    "order": 5,
+    "name": "Foto A4",
+    "description": "Foto no tamanho A4.",
+    "price": 10,
+    "categoryId": "cat-impressoes",
+    "image": "https://i.imgur.com/ouevuyA.png",
+    "stock": null,
+    "variations": [
+      "foto a4"
+    ],
+    "featured": false
   }
 ]
