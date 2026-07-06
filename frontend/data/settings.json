@@ -1,6 +1,6 @@
 {
   "storeName": "Impressões Na Hora & Personalizados",
-  "whatsappNumber": "5531933008775",
+  "whatsappNumber": "",
   "paymentMethods": {
     "pix": {
       "enabled": true,
@@ -16,6 +16,6 @@
     }
   },
   "githubRepo": "danreposi/IHP",
-  "githubTokenExpiresAt": "2026-10-03",
+  "githubTokenExpiresAt": "2026-10-04",
   "supportEmail": "leodanialves@gmail.com"
 }
