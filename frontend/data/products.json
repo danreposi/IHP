@@ -1,126 +1,77 @@
 [
   {
     "id": "prod-impressao",
-    "name": "Impressão de Documento",
-    "description": "Impressão avulsa por folha A4. Escolha o tipo de impressão.",
-    "price": 0.5,
+    "name": "Impressão Preto e Branco (Acima de 20)",
+    "description": "Impressão avulsa por folha A4.",
+    "price": 0.75,
     "categoryId": "cat-impressoes",
     "image": "🖨️",
     "variations": [
-      "Preto e Branco",
-      "Colorida",
-      "Fotográfica"
+      "Preto e Branco"
     ],
     "stock": null,
-    "featured": true,
+    "featured": false,
     "views": 0,
     "order": 0
   },
   {
-    "id": "prod-bloco-notas",
-    "name": "Bloco de Notas",
-    "description": "Bloco de notas 80 folhas, capa resistente.",
-    "price": 12.9,
-    "categoryId": "cat-papelaria",
-    "image": "📓",
+    "id": "prod-mr8kuuel-vxvulq",
+    "views": 0,
+    "order": 1,
+    "name": "Impressão Preto e Branco (Abaixo de 20)",
+    "description": "Impressão avulsa por folha A4.",
+    "price": 1,
+    "categoryId": "cat-impressoes",
+    "image": "🖨️",
+    "stock": null,
     "variations": [
-      "Pautado",
-      "Pontilhado",
-      "Quadriculado"
+      "Preto e Branco"
     ],
-    "stock": 24,
-    "featured": true,
-    "views": 0,
-    "order": 1
+    "featured": false
   },
   {
-    "id": "prod-caderno",
-    "name": "Caderno Universitário",
-    "description": "10 matérias, capa dura, 200 folhas.",
-    "price": 34.9,
-    "categoryId": "cat-papelaria",
-    "image": "📔",
+    "id": "prod-mr8kwtoc-lz79z0",
+    "views": 0,
+    "order": 2,
+    "name": "Impressão Colorida",
+    "description": "Impressão avulsa por folha A4.",
+    "price": 1,
+    "categoryId": "cat-impressoes",
+    "image": "🖨️",
+    "stock": null,
     "variations": [
-      "Pautado",
-      "Quadriculado"
+      "Colorida"
     ],
-    "stock": 10,
-    "featured": false,
-    "views": 0,
-    "order": 2
+    "featured": false
   },
   {
-    "id": "prod-borracha",
-    "name": "Borracha",
-    "description": "Borracha macia, não mancha o papel.",
-    "price": 2.5,
-    "categoryId": "cat-materiais",
-    "image": "🧼",
-    "variations": [],
-    "stock": 40,
-    "featured": false,
+    "id": "prod-mr8kxs1g-kst1un",
     "views": 0,
-    "order": 3
-  },
-  {
-    "id": "prod-lapis",
-    "name": "Lápis Grafite",
-    "description": "Lápis HB nº2, ideal para uso diário.",
-    "price": 1.8,
-    "categoryId": "cat-materiais",
-    "image": "✏️",
-    "variations": [],
-    "stock": 60,
-    "featured": false,
-    "views": 0,
-    "order": 4
-  },
-  {
-    "id": "prod-caneta",
-    "name": "Caneta Esferográfica",
-    "description": "Escrita macia, ponta 1.0mm.",
-    "price": 2.9,
-    "categoryId": "cat-materiais",
-    "image": "🖊️",
+    "order": 3,
+    "name": "Xerox",
+    "description": "Impressão avulsa por folha A4.",
+    "price": 0.5,
+    "categoryId": "cat-impressoes",
+    "image": "🖨️",
+    "stock": null,
     "variations": [
-      "Azul",
-      "Preta",
-      "Vermelha"
+      "Preto e Branco"
     ],
-    "stock": 50,
-    "featured": true,
-    "views": 0,
-    "order": 5
+    "featured": false
   },
   {
-    "id": "prod-marca-texto",
-    "name": "Marca-texto",
-    "description": "Cores vibrantes, ponta chanfrada.",
-    "price": 4.5,
-    "categoryId": "cat-materiais",
-    "image": "🖍️",
+    "id": "prod-mr8kyhte-cw2nxf",
+    "views": 0,
+    "order": 4,
+    "name": "Xerox Colorido",
+    "description": "Impressão em folha A4.",
+    "price": 1,
+    "categoryId": "cat-impressoes",
+    "image": "🖨️",
+    "stock": null,
     "variations": [
-      "Amarelo",
-      "Verde",
-      "Rosa",
-      "Laranja"
+      "Colorida"
     ],
-    "stock": 30,
-    "featured": false,
-    "views": 0,
-    "order": 6
-  },
-  {
-    "id": "prod-cola",
-    "name": "Cola Bastão",
-    "description": "Cola bastão 20g, seca rápido e não escorre.",
-    "price": 5.9,
-    "categoryId": "cat-materiais",
-    "image": "🧴",
-    "variations": [],
-    "stock": 3,
-    "featured": false,
-    "views": 0,
-    "order": 7
+    "featured": false
   }
 ]
