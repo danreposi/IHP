@@ -11,8 +11,8 @@
    ========================================================== */
 const CONFIG = {
   API_BASE_URL: "https://ihp-ebf0.onrender.com/api", // "" = modo local (localStorage) | "https://..." = modo backend
-  WHATSAPP_NUMBER_FALLBACK: "5500000000000", // usado só se não houver nada salvo ainda
-  STORE_NAME: "Papelaria & Impressões",
+  WHATSAPP_NUMBER_FALLBACK: "5531933008775", // usado só se não houver nada salvo ainda
+  STORE_NAME: "Impressões Na Hora & Personalizados",
 };
 // IMPORTANTE: "const" não vira propriedade de window automaticamente.
 // Atribuímos explicitamente para que outros arquivos (db.js, admin.js)
