@@ -14,3 +14,7 @@ const CONFIG = {
   WHATSAPP_NUMBER_FALLBACK: "5500000000000", // usado só se não houver nada salvo ainda
   STORE_NAME: "Papelaria & Impressões",
 };
+// IMPORTANTE: "const" não vira propriedade de window automaticamente.
+// Atribuímos explicitamente para que outros arquivos (db.js, admin.js)
+// consigam checar "window.CONFIG" com segurança.
+window.CONFIG = CONFIG;

@@ -59,15 +59,40 @@ function sessionToken() {
   return lsGet(LS_KEYS.session, null)?.token || null;
 }
 
-/* ---------- inicialização (seed na primeira visita, modo local) ---------- */
+/* ---------- inicialização (seed na primeira visita, modo local) ----------
+   Tenta usar os arquivos publicados em frontend/data/*.json (gerados pelo
+   botão "Publicar" do admin) como estado inicial para QUALQUER visitante
+   novo. Se não existirem ainda (ou o fetch falhar, ex: abrindo via file://),
+   cai de volta nos dados de exemplo embutidos (seed.js). Isso só roda UMA
+   vez por navegador — depois disso tudo vem do localStorage normalmente. */
+async function tryFetchJSON(path) {
+  try {
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null; // ex: aberto direto via file:// ou arquivo ainda não publicado
+  }
+}
+
 async function ensureSeed() {
   if (USE_API) return;
-  if (!localStorage.getItem(LS_KEYS.categories)) lsSet(LS_KEYS.categories, SEED_CATEGORIES);
-  if (!localStorage.getItem(LS_KEYS.products)) lsSet(LS_KEYS.products, SEED_PRODUCTS);
+
+  if (!localStorage.getItem(LS_KEYS.categories)) {
+    const published = await tryFetchJSON("data/categories.json");
+    lsSet(LS_KEYS.categories, published && published.length ? published : SEED_CATEGORIES);
+  }
+  if (!localStorage.getItem(LS_KEYS.products)) {
+    const published = await tryFetchJSON("data/products.json");
+    lsSet(LS_KEYS.products, published && published.length ? published : SEED_PRODUCTS);
+  }
   if (!localStorage.getItem(LS_KEYS.orders)) lsSet(LS_KEYS.orders, []);
   if (!localStorage.getItem(LS_KEYS.settings)) {
-    const settings = { ...SEED_SETTINGS };
-    settings.adminPasswordHash = await hashText("1234");
+    const published = await tryFetchJSON("data/settings.json");
+    const settings = { ...SEED_SETTINGS, ...(published || {}) };
+    // o arquivo publicado nunca traz a senha/token (por segurança) — garante
+    // a senha padrão "1234" para quem nunca configurou uma senha própria
+    if (!settings.adminPasswordHash) settings.adminPasswordHash = await hashText("1234");
     lsSet(LS_KEYS.settings, settings);
   }
   if (!localStorage.getItem(LS_KEYS.stats)) {

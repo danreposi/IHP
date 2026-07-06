@@ -460,6 +460,7 @@ async function publishToGithub() {
       }
       const publicSettings = { ...s };
       delete publicSettings.githubToken;
+      delete publicSettings.adminPasswordHash; // nunca publica a senha (nem o hash dela) no repositório
 
       await githubPutFile(s.githubRepo, s.githubToken, "frontend/data/products.json", ADMIN_STATE.products, "chore: atualizar produtos via painel admin");
       await githubPutFile(s.githubRepo, s.githubToken, "frontend/data/categories.json", ADMIN_STATE.categories, "chore: atualizar categorias via painel admin");
