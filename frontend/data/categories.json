@@ -6,9 +6,15 @@
     "order": 0
   },
   {
-    "id": "cat-mr9gsd1n-ysckq2",
-    "order": 1,
-    "name": "Fotografia",
-    "icon": "📸"
+    "id": "cat-papelaria",
+    "name": "Papelaria",
+    "icon": "📓",
+    "order": 1
+  },
+  {
+    "id": "cat-materiais",
+    "name": "Materiais",
+    "icon": "✏️",
+    "order": 2
   }
 ]
