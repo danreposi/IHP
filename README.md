@@ -174,7 +174,7 @@ autorização do autor.
 
 ## ✅ Próximos passos sugeridos
 
-- Contratar uma hospedagem simples para o `backend/` quando quiser dados
+- Contratar uma hospedagem simples para o `backend/` quando quiser dados 
   compartilhados entre todos os dispositivos/admins.
 - Trocar as imagens de emoji por fotos reais dos produtos (o campo aceita
   URL de imagem).
