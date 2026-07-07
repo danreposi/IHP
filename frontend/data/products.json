@@ -1,229 +1,54 @@
 [
   {
-    "id": "prod-bloco-notas",
-    "name": "Bloco de Notas",
-    "description": "Bloco de notas 80 folhas, capa resistente.",
-    "price": 12.9,
-    "categoryId": "cat-papelaria",
-    "image": "📓",
-    "variations": [
-      {
-        "name": "Pautado",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Pontilhado",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Quadriculado",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      }
-    ],
-    "stock": 24,
-    "minQty": 1,
-    "maxQty": 10,
-    "featured": true,
-    "promo": {
-      "active": true,
-      "type": "percent",
-      "value": 15
-    },
-    "views": 5,
-    "order": 1
-  },
-  {
     "id": "prod-impressao",
-    "name": "Impressão de Documento",
-    "description": "Impressão avulsa por folha A4. Preço varia pelo tipo escolhido.",
-    "price": 0.5,
+    "name": "Impressão Preto e Branco",
+    "description": "Impressão Preto e Branco em folha A4.",
+    "price": 1,
     "categoryId": "cat-impressoes",
-    "image": "https://i.imgur.com/MxwFCur.png",
-    "variations": [
-      {
-        "name": "Preto e Branco",
-        "price": 0.5,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Colorida",
-        "price": 1,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Fotográfica",
-        "price": 2.5,
-        "minQty": null,
-        "maxQty": 20
-      }
-    ],
+    "image": "https://i.imgur.com/QB5dgpa.png",
+    "variations": [],
     "stock": null,
     "minQty": 1,
     "maxQty": null,
-    "featured": true,
+    "featured": false,
     "promo": null,
     "views": 7,
-    "order": 0
+    "order": 1
   },
   {
-    "id": "prod-caderno",
-    "name": "Caderno Universitário",
-    "description": "10 matérias, capa dura, 200 folhas.",
-    "price": 34.9,
-    "categoryId": "cat-papelaria",
-    "image": "📔",
-    "variations": [
-      {
-        "name": "Pautado",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Quadriculado",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      }
-    ],
-    "stock": 10,
-    "minQty": 1,
-    "maxQty": null,
-    "featured": false,
-    "promo": null,
+    "id": "prod-mrb7qlqm-at8vgd",
     "views": 0,
-    "order": 2
-  },
-  {
-    "id": "prod-borracha",
-    "name": "Borracha",
-    "description": "Borracha macia, não mancha o papel.",
-    "price": 2.5,
-    "categoryId": "cat-materiais",
-    "image": "🧼",
+    "order": 0,
+    "name": "Promoção Impressão Preto e Branco",
+    "description": "Mínimo de Impressão Preto e Branco em folha A4.",
+    "price": 1,
+    "categoryId": "cat-impressoes",
+    "image": "https://i.imgur.com/QB5dgpa.png",
     "variations": [],
-    "stock": 40,
-    "minQty": 1,
+    "stock": null,
+    "minQty": 20,
     "maxQty": null,
     "featured": false,
-    "promo": null,
-    "views": 0,
-    "order": 3
+    "promo": {
+      "active": true,
+      "type": "fixed",
+      "value": 0.25
+    }
   },
   {
-    "id": "prod-lapis",
-    "name": "Lápis Grafite",
-    "description": "Lápis HB nº2, ideal para uso diário. Venda mínima de 2 unidades.",
-    "price": 1.8,
-    "categoryId": "cat-materiais",
-    "image": "✏️",
+    "id": "prod-mrb7nhav-1263a8",
+    "views": 0,
+    "order": 2,
+    "name": "Impressão Colorida",
+    "description": "Impressão Colorida em folha A4.",
+    "price": 2,
+    "categoryId": "cat-impressoes",
+    "image": "https://i.imgur.com/QB5dgpa.png",
     "variations": [],
-    "stock": 60,
-    "minQty": 2,
-    "maxQty": null,
-    "featured": false,
-    "promo": null,
-    "views": 0,
-    "order": 4
-  },
-  {
-    "id": "prod-caneta",
-    "name": "Caneta Esferográfica",
-    "description": "Escrita macia, ponta 1.0mm.",
-    "price": 2.9,
-    "categoryId": "cat-materiais",
-    "image": "🖊️",
-    "variations": [
-      {
-        "name": "Azul",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Preta",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Vermelha",
-        "price": null,
-        "minQty": null,
-        "maxQty": 5
-      }
-    ],
-    "stock": 50,
-    "minQty": 1,
-    "maxQty": null,
-    "featured": true,
-    "promo": null,
-    "views": 1,
-    "order": 5
-  },
-  {
-    "id": "prod-marca-texto",
-    "name": "Marca-texto",
-    "description": "Cores vibrantes, ponta chanfrada.",
-    "price": 4.5,
-    "categoryId": "cat-materiais",
-    "image": "🖍️",
-    "variations": [
-      {
-        "name": "Amarelo",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Verde",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Rosa",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      },
-      {
-        "name": "Laranja",
-        "price": null,
-        "minQty": null,
-        "maxQty": null
-      }
-    ],
-    "stock": 30,
+    "stock": null,
     "minQty": 1,
     "maxQty": null,
     "featured": false,
-    "promo": null,
-    "views": 0,
-    "order": 6
-  },
-  {
-    "id": "prod-cola",
-    "name": "Cola Bastão",
-    "description": "Cola bastão 20g, seca rápido e não escorre.",
-    "price": 5.9,
-    "categoryId": "cat-materiais",
-    "image": "🧴",
-    "variations": [],
-    "stock": 3,
-    "minQty": 1,
-    "maxQty": null,
-    "featured": false,
-    "promo": null,
-    "views": 0,
-    "order": 7
+    "promo": null
   }
 ]
