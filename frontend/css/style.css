@@ -9,6 +9,13 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
 
+.brand-mark {
+    width: 35px;      /* ajuste para o tamanho que quiser */
+    height: 35px;
+    object-fit: contain;
+    display: block;
+}
+
 :root{
   /* ---- paleta base (tema claro) ---- */
   --bg: #F3F4F6;
