@@ -16,6 +16,8 @@
     }
   },
   "githubRepo": "danreposi/IHP",
-  "githubTokenExpiresAt": "2026-10-04",
-  "supportEmail": "leodanialves@gmail.com"
+  "githubTokenExpiresAt": "2026-10-07",
+  "supportEmail": "leodanialves@gmail.com",
+  "autoBackupGithub": false,
+  "backupOrdersToGithub": false
 }
