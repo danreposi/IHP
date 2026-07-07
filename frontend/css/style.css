@@ -46,7 +46,7 @@
 
   --dot-color: rgba(30,58,138,.07);
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 [data-theme="dark"]{
@@ -353,11 +353,6 @@ img{max-width:100%; display:block;}
 /* ==============================
    AJUSTES FINAIS — TEMA CLARO + MOBILE
    ============================== */
-
-/* Força o site a começar claro */
-html{
-  color-scheme: light;
-}
 
 html:not([data-theme="dark"]){
   --bg: #F3F4F6;
