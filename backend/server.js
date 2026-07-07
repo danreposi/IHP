@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const { restoreFromGithubIfNeeded } = require("./githubRestore");
 
 const app = express();
 
@@ -25,7 +26,14 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Backend da Papelaria rodando em http://localhost:${PORT}`);
-  console.log(`   Senha padrão do admin: 1234 (troque no painel após o primeiro login)`);
-});
+
+// Antes de subir o servidor, tenta restaurar o último backup do GitHub caso
+// o banco de dados local não exista ainda (disco zerado, ex: Render free tier).
+restoreFromGithubIfNeeded()
+  .catch((e) => console.error("⚠️ Falha ao tentar restaurar do GitHub:", e.message))
+  .finally(() => {
+    app.listen(PORT, () => {
+      console.log(`✅ Backend da Papelaria rodando em http://localhost:${PORT}`);
+      console.log(`   Senha padrão do admin: 1234 (troque no painel após o primeiro login)`);
+    });
+  });

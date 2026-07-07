@@ -14,19 +14,33 @@ papelaria-site/
 │   ├── css/style.css    → Todo o visual do site (tema claro/escuro/sistema)
 │   ├── js/
 │   │   ├── config.js     → Liga/desliga o backend (modo local x modo API)
-│   │   ├── seed.js        → Dados iniciais (categorias/produtos de exemplo)
-│   │   ├── db.js           → Camada de dados (localStorage OU API)
-│   │   ├── theme.js         → Troca de tema
-│   │   ├── store.js          → Lógica da loja (carrinho, checkout, WhatsApp)
-│   │   └── admin.js           → Lógica do painel administrativo
-│   └── data/                  → Onde o botão "Publicar" grava os JSON no GitHub
+│   │   ├── utils.js        → Funções compartilhadas (escapeHtml, preços/limites com promoção e variação)
+│   │   ├── seed.js          → Dados iniciais (categorias/produtos de exemplo)
+│   │   ├── db.js              → Camada de dados (localStorage OU API)
+│   │   ├── theme.js             → Troca de tema
+│   │   ├── store.js               → Lógica da loja (carrinho, checkout, WhatsApp)
+│   │   └── admin.js                → Lógica do painel administrativo
+│   └── data/                          → Onde o botão "Publicar"/backup automático grava os JSON no GitHub
 │
 └── backend/             → API + banco de dados (Node.js/Express), para quando
     ├── server.js           você tiver uma hospedagem própria (não o GitHub Pages)
     ├── db.js
+    ├── githubBackup.js     → Backup automático (debounced) pro GitHub
+    ├── githubRestore.js    → Restaura o catálogo do GitHub se o disco for zerado (Render free tier)
     ├── routes/
     └── middleware/
 ```
+
+## 🆕 Novidades desta revisão
+
+**Correções de bugs:**
+- 🔒 Corrigido um XSS real: nome/telefone/observações de clientes e nomes de produto/categoria agora passam por `escapeHtml()` antes de entrar na tela — antes, um cliente podia digitar HTML/JS no campo "Nome" do checkout e ele rodava na tela do admin.
+- 🔄 `backend/githubRestore.js` e `backend/githubBackup.js` existiam mas nunca eram chamados por nenhuma rota — ou seja, a restauração automática (proteção contra o disco zerado do Render) e o backup automático debounced não funcionavam de verdade. Agora estão conectados no `server.js` e em todas as rotas de escrita.
+- 🏷️ O indicador "Token já configurado" no painel sempre mostrava "nenhum token salvo", mesmo com o token salvo — a API nunca devolvia essa informação. Agora existe um campo `githubTokenConfigured` (booleano, sem expor o segredo).
+- 📦 Publicação manual (`/api/github/publish`) não incluía o backup de pedidos mesmo com a opção ligada — corrigido, e agora reaproveita o mesmo código do backup automático (evita bugs por código duplicado).
+- 🧹 Removidos `LICENSE`/`README.md` duplicados que tinham ido parar dentro de `frontend/css/`, e o `.gitignore`/`.env.example` que haviam sumido.
+
+**Já existentes nesta versão (mantidos):** produtos com promoção (%, ou R$ fixo), variações com preço/quantidade mínima/máxima próprios, controle de estoque com bloqueio de "Esgotado", gráfico de vendas dos últimos 7 dias no dashboard, busca/filtro de pedidos, exportação de pedidos em CSV, reordenar produtos/categorias com ▲▼, duplicar produto.
 
 ## 🧠 Como o site funciona (modo local x modo backend)
 
@@ -110,6 +124,26 @@ Configure o número da loja em **Configurações → Número do WhatsApp** (com
 código do país e DDD, só números, ex: `5531999999999`). Ao clicar em
 "Finalizar Pedido", o cliente é levado ao WhatsApp com uma mensagem já
 pronta contendo os itens, valores e forma de pagamento escolhidos.
+
+## 🛟 Proteção contra "reset" de hospedagens gratuitas (Render, etc.)
+
+Hospedagens no plano gratuito (como o Render) apagam o disco a cada reinício
+do servidor — isso zeraria seu catálogo. Para evitar isso:
+
+1. No painel admin, aba **Publicar**, ative **"Fazer backup automático a cada
+   alteração"**. A cada mudança em produtos/categorias/config, o backend
+   agenda um commit (agrupando mudanças próximas em um só) pro seu repositório.
+2. No servidor (arquivo `.env` do backend), configure:
+   ```
+   GITHUB_BACKUP_REPO=usuario/repositorio
+   GITHUB_BACKUP_BRANCH=main
+   ```
+   Assim, sempre que o servidor subir "do zero" (sem `backend/data/db.json`),
+   ele tenta restaurar automaticamente o último catálogo publicado no GitHub
+   antes de criar os dados de exemplo padrão.
+3. Pedidos **não** entram nesse backup por padrão (são dados de clientes) —
+   só se você marcar "Incluir pedidos no backup" e usar um repositório
+   **privado**.
 
 ## 🖥️ Rodando o backend localmente (opcional, para testar antes de hospedar)
 

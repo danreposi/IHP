@@ -1,5 +1,7 @@
 /* ==========================================================
    PAINEL ADMINISTRATIVO
+   showToast/formatBRL/formatDate/escapeHtml/openModal/closeModal
+   vêm de utils.js (compartilhado com a loja).
    ========================================================== */
 
 let ADMIN_STATE = {
@@ -10,17 +12,8 @@ let ADMIN_STATE = {
   stats: {},
 };
 
-function showToast(message, type = "") {
-  const toast = document.getElementById("toast");
-  toast.textContent = message;
-  toast.className = `toast show ${type}`;
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => toast.classList.remove("show"), 2600);
-}
-function formatBRL(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
-function formatDate(iso) { return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }); }
-function openModal(id) { document.getElementById(id).classList.add("open"); document.getElementById("overlay").classList.add("open"); }
-function closeModal(id) { document.getElementById(id).classList.remove("open"); document.getElementById("overlay").classList.remove("open"); }
+let ORDERS_FILTER = { search: "", status: "todos" };
+let variationRowSeq = 0;
 
 /* ---------------- Boot / Login ---------------- */
 document.addEventListener("DOMContentLoaded", async () => {
@@ -75,6 +68,7 @@ async function enterAdmin() {
   renderConfig();
   bindProductModal();
   bindCategoryModal();
+  bindOrdersFilters();
   checkGithubTokenExpiry();
 }
 
@@ -92,12 +86,68 @@ function switchTab(tab) {
   document.querySelectorAll(".admin-nav-btn[data-tab]").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
 }
 
+/* ---------------- Ações rápidas de status (Dashboard + Pedidos) ---------------- */
+function orderQuickActionsHTML(o) {
+  const opt = (status, icon, label) =>
+    `<button title="${label}" data-order-id="${o.id}" data-set-status="${status}" style="opacity:${o.status === status ? 1 : 0.35};">${icon}</button>`;
+  return `<div class="row-actions">${opt("pendente", "⏳", "Marcar pendente")}${opt("concluido", "✅", "Marcar concluído")}${opt("cancelado", "❌", "Marcar cancelado")}</div>`;
+}
+
+function bindOrderQuickActions(container, afterUpdate) {
+  container.querySelectorAll("[data-set-status]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await DB.updateOrderStatus(btn.dataset.orderId, btn.dataset.setStatus);
+      await loadAllData();
+      await autoBackupIfEnabled();
+      afterUpdate();
+      showToast("Status do pedido atualizado.", "success");
+    });
+  });
+}
+
 /* ---------------- Dashboard ---------------- */
+function renderSalesChart(orders) {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    days.push(d);
+  }
+  const totals = days.map((day) => {
+    const next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    return orders
+      .filter((o) => o.status !== "cancelado" && new Date(o.date) >= day && new Date(o.date) < next)
+      .reduce((sum, o) => sum + o.total, 0);
+  });
+  const max = Math.max(...totals, 1);
+
+  const bars = totals
+    .map((total, i) => {
+      const heightPct = Math.max(4, Math.round((total / max) * 100));
+      const label = days[i].toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+      return `
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <span class="mono" style="font-size:.68rem; color:var(--text-muted);">${total > 0 ? formatBRL(total) : ""}</span>
+        <div style="width:100%; max-width:34px; height:120px; display:flex; align-items:flex-end;">
+          <div style="width:100%; height:${heightPct}%; background:linear-gradient(180deg, var(--accent), var(--navy)); border-radius:6px 6px 2px 2px;"></div>
+        </div>
+        <span style="font-size:.72rem; color:var(--text-muted); text-transform:capitalize;">${label}</span>
+      </div>`;
+    })
+    .join("");
+
+  document.getElementById("sales-chart").innerHTML = `<div style="display:flex; gap:10px; align-items:flex-end;">${bars}</div>`;
+}
+
 function renderDashboard() {
   const orders = ADMIN_STATE.orders;
   const completed = orders.filter((o) => o.status === "concluido");
   const cancelled = orders.filter((o) => o.status === "cancelado");
   const revenue = completed.reduce((s, o) => s + o.total, 0);
+  const avgTicket = completed.length ? revenue / completed.length : 0;
+  const promoCount = ADMIN_STATE.products.filter((p) => p.promo && p.promo.active).length;
 
   const productSales = {};
   const productViews = {};
@@ -116,52 +166,79 @@ function renderDashboard() {
     { label: "Pedidos concluídos", value: completed.length },
     { label: "Pedidos cancelados", value: cancelled.length },
     { label: "Receita estimada", value: formatBRL(revenue) },
-    { label: "Produto mais vendido", value: topSelling ? topSelling[0] : "—" },
-    { label: "Produto mais visualizado", value: topViewed ? topViewed[0] : "—" },
+    { label: "Ticket médio", value: formatBRL(avgTicket) },
+    { label: "Produto mais vendido", value: topSelling ? escapeHtml(topSelling[0]) : "—" },
+    { label: "Produto mais visualizado", value: topViewed ? escapeHtml(topViewed[0]) : "—" },
     { label: "Pagamento mais usado", value: topPayment ? topPayment[0].toUpperCase() : "—" },
     { label: "Produtos com estoque baixo", value: lowStock },
+    { label: "Produtos em promoção", value: promoCount },
   ];
   document.getElementById("stat-grid").innerHTML = stats
     .map((s) => `<div class="stat-card"><div class="label">${s.label}</div><div class="value">${s.value}</div></div>`)
     .join("");
+
+  renderSalesChart(orders);
 
   const tbody = document.querySelector("#recent-orders-table tbody");
   tbody.innerHTML = orders
     .slice(0, 8)
     .map(
       (o) => `<tr>
-        <td>${o.customer.name}</td>
+        <td>${escapeHtml(o.customer.name)}</td>
         <td>${o.items.reduce((s, i) => s + i.qty, 0)} item(ns)</td>
         <td>${formatBRL(o.total)}</td>
         <td>${o.payment.toUpperCase()}</td>
         <td><span class="pill-status ${o.status}">${o.status}</span></td>
         <td>${formatDate(o.date)}</td>
+        <td>${orderQuickActionsHTML(o)}</td>
       </tr>`
     )
-    .join("") || `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Nenhum pedido ainda.</td></tr>`;
+    .join("") || `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Nenhum pedido ainda.</td></tr>`;
+
+  bindOrderQuickActions(tbody, () => { renderDashboard(); renderOrdersTable(); });
 }
 
 /* ---------------- Produtos ---------------- */
+function limitLabel(p) {
+  const min = p.minQty && p.minQty > 1 ? p.minQty : null;
+  const max = p.maxQty || null;
+  if (!min && !max) return "—";
+  return `${min || 1}–${max || "∞"}`;
+}
+
+function promoLabel(p) {
+  if (!p.promo || !p.promo.active) return "";
+  const v = p.promo.type === "percent" ? `-${p.promo.value}%` : `-${formatBRL(p.promo.value)}`;
+  return `<span style="color:var(--danger); font-weight:700;">🔥 ${v}</span>`;
+}
+
 function renderProductsTable() {
   const tbody = document.getElementById("products-table-body");
-  tbody.innerHTML = ADMIN_STATE.products
+  const sorted = [...ADMIN_STATE.products].sort((a, b) => a.order - b.order);
+  tbody.innerHTML = sorted
     .map((p, idx) => {
       const cat = ADMIN_STATE.categories.find((c) => c.id === p.categoryId);
       return `<tr data-id="${p.id}">
-        <td class="drag-handle">⠿</td>
-        <td>${p.image && p.image.startsWith("http") ? "🖼️" : p.image || "📦"} ${p.name}</td>
-        <td>${cat ? cat.name : "—"}</td>
+        <td class="row-actions">
+          <button title="Mover para cima" data-move-product="${p.id}:-1" ${idx === 0 ? "disabled" : ""}>▲</button>
+          <button title="Mover para baixo" data-move-product="${p.id}:1" ${idx === sorted.length - 1 ? "disabled" : ""}>▼</button>
+        </td>
+        <td>${p.image && p.image.startsWith("http") ? "🖼️" : escapeHtml(p.image || "📦")} ${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(cat ? cat.name : "—")}</td>
         <td>${formatBRL(p.price)}</td>
         <td>${typeof p.stock === "number" ? p.stock : "—"}</td>
+        <td class="mono">${limitLabel(p)}</td>
         <td>${p.featured ? "⭐" : ""}</td>
+        <td>${promoLabel(p)}</td>
         <td>${p.views || 0}</td>
         <td class="row-actions">
+          <button title="Duplicar" data-duplicate-product="${p.id}">⧉</button>
           <button title="Editar" data-edit-product="${p.id}">✏️</button>
           <button title="Excluir" data-delete-product="${p.id}">🗑️</button>
         </td>
       </tr>`;
     })
-    .join("") || `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Nenhum produto cadastrado.</td></tr>`;
+    .join("") || `<tr><td colspan="10" style="text-align:center;color:var(--text-muted);">Nenhum produto cadastrado.</td></tr>`;
 
   tbody.querySelectorAll("[data-edit-product]").forEach((btn) => btn.addEventListener("click", () => openProductModal(btn.dataset.editProduct)));
   tbody.querySelectorAll("[data-delete-product]").forEach((btn) =>
@@ -169,16 +246,125 @@ function renderProductsTable() {
       if (!confirm("Excluir este produto?")) return;
       await DB.deleteProduct(btn.dataset.deleteProduct);
       await loadAllData();
+      await autoBackupIfEnabled();
       renderProductsTable();
       renderDashboard();
       showToast("Produto excluído.", "success");
     })
   );
+  tbody.querySelectorAll("[data-duplicate-product]").forEach((btn) =>
+    btn.addEventListener("click", () => duplicateProduct(btn.dataset.duplicateProduct))
+  );
+  tbody.querySelectorAll("[data-move-product]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const [id, dir] = btn.dataset.moveProduct.split(":");
+      moveProductOrder(id, parseInt(dir, 10));
+    })
+  );
+}
+
+async function moveProductOrder(id, direction) {
+  const list = [...ADMIN_STATE.products].sort((a, b) => a.order - b.order);
+  const idx = list.findIndex((p) => p.id === id);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= list.length) return;
+  const tmp = list[idx].order;
+  list[idx].order = list[swapIdx].order;
+  list[swapIdx].order = tmp;
+  await DB.saveProducts(list);
+  await loadAllData();
+  await autoBackupIfEnabled();
+  renderProductsTable();
+}
+
+async function duplicateProduct(id) {
+  const product = ADMIN_STATE.products.find((p) => p.id === id);
+  if (!product) return;
+  const clone = { ...product, name: `${product.name} (cópia)` };
+  delete clone.id;
+  delete clone.order;
+  delete clone.views;
+  await DB.addProduct(clone);
+  await loadAllData();
+  await autoBackupIfEnabled();
+  renderProductsTable();
+  renderDashboard();
+  showToast("Produto duplicado! Edite a cópia para ajustar o que for preciso.", "success");
 }
 
 function fillCategorySelect() {
   const select = document.getElementById("product-category");
-  select.innerHTML = ADMIN_STATE.categories.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
+  select.innerHTML = ADMIN_STATE.categories.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+}
+
+/* ---------- Editor de variações (linhas dinâmicas) ---------- */
+function variationRowHTML(v, rowId) {
+  return `
+  <div class="variation-row" data-row-id="${rowId}" style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
+    <input type="text" data-v-name value="${escapeHtml(v.name || "")}" placeholder="Nome (ex: Colorida)" style="flex:2; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text);" />
+    <input type="number" step="0.01" data-v-price value="${v.price != null ? v.price : ""}" placeholder="Preço" style="flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text);" />
+    <input type="number" min="1" data-v-min value="${v.minQty != null ? v.minQty : ""}" placeholder="Mín." style="flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text);" />
+    <input type="number" min="1" data-v-max value="${v.maxQty != null ? v.maxQty : ""}" placeholder="Máx." style="flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text);" />
+    <button type="button" data-remove-variation="${rowId}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1rem;">✕</button>
+  </div>`;
+}
+
+function renderVariationsEditor(variations) {
+  const wrap = document.getElementById("variations-editor");
+  wrap.innerHTML = "";
+  variations.forEach((v) => addVariationRow(v));
+}
+
+function addVariationRow(v = { name: "", price: null, minQty: null, maxQty: null }) {
+  const wrap = document.getElementById("variations-editor");
+  const rowId = `vrow-${variationRowSeq++}`;
+  wrap.insertAdjacentHTML("beforeend", variationRowHTML(v, rowId));
+  wrap.querySelector(`[data-remove-variation="${rowId}"]`).addEventListener("click", () => {
+    wrap.querySelector(`[data-row-id="${rowId}"]`).remove();
+  });
+}
+
+function gatherVariationsFromEditor() {
+  const rows = document.querySelectorAll("#variations-editor .variation-row");
+  const result = [];
+  rows.forEach((row) => {
+    const name = row.querySelector("[data-v-name]").value.trim();
+    if (!name) return;
+    const priceRaw = row.querySelector("[data-v-price]").value;
+    const minRaw = row.querySelector("[data-v-min]").value;
+    const maxRaw = row.querySelector("[data-v-max]").value;
+    result.push({
+      name,
+      price: priceRaw === "" ? null : parseFloat(priceRaw),
+      minQty: minRaw === "" ? null : parseInt(minRaw, 10),
+      maxQty: maxRaw === "" ? null : parseInt(maxRaw, 10),
+    });
+  });
+  return result;
+}
+
+/* ---------- Imagem: tipo + preview ---------- */
+function updateImagePreview() {
+  const value = document.getElementById("product-image").value.trim();
+  const preview = document.getElementById("product-image-preview");
+  if (value.startsWith("http")) {
+    preview.innerHTML = `<img src="${escapeHtml(value)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='⚠️'" />`;
+  } else {
+    preview.textContent = value || "📦";
+  }
+}
+
+/* ---------- Promoção: preview de preço ---------- */
+function updatePromoPreview() {
+  const active = document.getElementById("product-promo-active").checked;
+  document.getElementById("promo-fields").classList.toggle("hidden", !active);
+  const price = parseFloat(document.getElementById("product-price").value) || 0;
+  const type = document.getElementById("product-promo-type").value;
+  const value = parseFloat(document.getElementById("product-promo-value").value) || 0;
+  const previewEl = document.getElementById("promo-preview");
+  if (!active || !price) { previewEl.textContent = ""; return; }
+  const finalPrice = type === "percent" ? Math.max(0, price * (1 - value / 100)) : Math.max(0, price - value);
+  previewEl.textContent = `De ${formatBRL(price)} por ${formatBRL(finalPrice)}`;
 }
 
 function openProductModal(id) {
@@ -192,19 +378,45 @@ function openProductModal(id) {
   document.getElementById("product-category").value = product ? product.categoryId : (ADMIN_STATE.categories[0]?.id || "");
   document.getElementById("product-image").value = product ? product.image || "" : "";
   document.getElementById("product-stock").value = product && typeof product.stock === "number" ? product.stock : "";
-  document.getElementById("product-variations").value = product && product.variations ? product.variations.join(", ") : "";
+  document.getElementById("product-min-qty").value = product && product.minQty > 1 ? product.minQty : "";
+  document.getElementById("product-max-qty").value = product && product.maxQty ? product.maxQty : "";
   document.getElementById("product-featured").checked = product ? !!product.featured : false;
+
+  const isUrl = !!(product && product.image && product.image.startsWith("http"));
+  document.getElementById("image-type-emoji").checked = !isUrl;
+  document.getElementById("image-type-url").checked = isUrl;
+  updateImagePreview();
+
+  const promo = product && product.promo;
+  document.getElementById("product-promo-active").checked = !!(promo && promo.active);
+  document.getElementById("product-promo-type").value = promo ? promo.type : "percent";
+  document.getElementById("product-promo-value").value = promo ? promo.value : "";
+  updatePromoPreview();
+
+  renderVariationsEditor(normalizeVariations(product ? product.variations : []));
+
   openModal("product-modal");
 }
 
 function bindProductModal() {
   document.getElementById("new-product-btn").addEventListener("click", () => openProductModal(null));
+  document.getElementById("add-variation-btn").addEventListener("click", () => addVariationRow());
+  document.getElementById("product-image").addEventListener("input", updateImagePreview);
+  document.getElementById("product-promo-active").addEventListener("change", updatePromoPreview);
+  document.getElementById("product-promo-type").addEventListener("change", updatePromoPreview);
+  document.getElementById("product-promo-value").addEventListener("input", updatePromoPreview);
+  document.getElementById("product-price").addEventListener("input", updatePromoPreview);
+
   document.getElementById("save-product-btn").addEventListener("click", async () => {
     const id = document.getElementById("product-id").value;
     const name = document.getElementById("product-name").value.trim();
     const price = parseFloat(document.getElementById("product-price").value);
     if (!name || isNaN(price)) { showToast("Preencha nome e preço corretamente.", "error"); return; }
     const stockRaw = document.getElementById("product-stock").value;
+    const minRaw = document.getElementById("product-min-qty").value;
+    const maxRaw = document.getElementById("product-max-qty").value;
+    const promoActive = document.getElementById("product-promo-active").checked;
+
     const payload = {
       name,
       description: document.getElementById("product-description").value.trim(),
@@ -212,12 +424,18 @@ function bindProductModal() {
       categoryId: document.getElementById("product-category").value,
       image: document.getElementById("product-image").value.trim() || "📦",
       stock: stockRaw === "" ? null : parseInt(stockRaw, 10),
-      variations: document.getElementById("product-variations").value.split(",").map((v) => v.trim()).filter(Boolean),
+      minQty: minRaw === "" ? 1 : Math.max(1, parseInt(minRaw, 10)),
+      maxQty: maxRaw === "" ? null : Math.max(1, parseInt(maxRaw, 10)),
+      variations: gatherVariationsFromEditor(),
       featured: document.getElementById("product-featured").checked,
+      promo: promoActive
+        ? { active: true, type: document.getElementById("product-promo-type").value, value: parseFloat(document.getElementById("product-promo-value").value) || 0 }
+        : null,
     };
     if (id) await DB.updateProduct(id, payload);
     else await DB.addProduct(payload);
     await loadAllData();
+    await autoBackupIfEnabled();
     renderProductsTable();
     renderDashboard();
     closeModal("product-modal");
@@ -228,13 +446,17 @@ function bindProductModal() {
 /* ---------------- Categorias ---------------- */
 function renderCategoriesTable() {
   const tbody = document.getElementById("categories-table-body");
-  tbody.innerHTML = ADMIN_STATE.categories
-    .map((c) => {
+  const sorted = [...ADMIN_STATE.categories].sort((a, b) => a.order - b.order);
+  tbody.innerHTML = sorted
+    .map((c, idx) => {
       const count = ADMIN_STATE.products.filter((p) => p.categoryId === c.id).length;
       return `<tr data-id="${c.id}">
-        <td class="drag-handle">⠿</td>
-        <td>${c.icon || ""}</td>
-        <td>${c.name}</td>
+        <td class="row-actions">
+          <button title="Mover para cima" data-move-category="${c.id}:-1" ${idx === 0 ? "disabled" : ""}>▲</button>
+          <button title="Mover para baixo" data-move-category="${c.id}:1" ${idx === sorted.length - 1 ? "disabled" : ""}>▼</button>
+        </td>
+        <td>${escapeHtml(c.icon || "")}</td>
+        <td>${escapeHtml(c.name)}</td>
         <td>${count} produto(s)</td>
         <td class="row-actions">
           <button title="Editar" data-edit-category="${c.id}">✏️</button>
@@ -248,14 +470,36 @@ function renderCategoriesTable() {
   tbody.querySelectorAll("[data-delete-category]").forEach((btn) =>
     btn.addEventListener("click", async () => {
       const inUse = ADMIN_STATE.products.some((p) => p.categoryId === btn.dataset.deleteCategory);
-      if (inUse && !confirm("Existem produtos nesta categoria. Excluir mesmo assim?")) return;
+      if (inUse && !confirm("Existem produtos nesta categoria. Excluir mesmo assim? Eles ficarão sem categoria.")) return;
       if (!inUse && !confirm("Excluir esta categoria?")) return;
       await DB.deleteCategory(btn.dataset.deleteCategory);
       await loadAllData();
+      await autoBackupIfEnabled();
       renderCategoriesTable();
+      renderProductsTable();
       showToast("Categoria excluída.", "success");
     })
   );
+  tbody.querySelectorAll("[data-move-category]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const [id, dir] = btn.dataset.moveCategory.split(":");
+      moveCategoryOrder(id, parseInt(dir, 10));
+    })
+  );
+}
+
+async function moveCategoryOrder(id, direction) {
+  const list = [...ADMIN_STATE.categories].sort((a, b) => a.order - b.order);
+  const idx = list.findIndex((c) => c.id === id);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= list.length) return;
+  const tmp = list[idx].order;
+  list[idx].order = list[swapIdx].order;
+  list[swapIdx].order = tmp;
+  await DB.saveCategories(list);
+  await loadAllData();
+  await autoBackupIfEnabled();
+  renderCategoriesTable();
 }
 
 function openCategoryModal(id) {
@@ -281,6 +525,7 @@ function bindCategoryModal() {
       await DB.addCategory(payload);
     }
     await loadAllData();
+    await autoBackupIfEnabled();
     renderCategoriesTable();
     closeModal("category-modal");
     showToast("Categoria salva!", "success");
@@ -288,37 +533,71 @@ function bindCategoryModal() {
 }
 
 /* ---------------- Pedidos ---------------- */
+function filteredOrders() {
+  const term = ORDERS_FILTER.search.trim().toLowerCase();
+  return ADMIN_STATE.orders.filter((o) => {
+    const matchStatus = ORDERS_FILTER.status === "todos" || o.status === ORDERS_FILTER.status;
+    const matchSearch = !term || o.customer.name.toLowerCase().includes(term) || o.customer.phone.toLowerCase().includes(term);
+    return matchStatus && matchSearch;
+  });
+}
+
 function renderOrdersTable() {
   const tbody = document.getElementById("orders-table-body");
-  tbody.innerHTML = ADMIN_STATE.orders
+  const list = filteredOrders();
+  tbody.innerHTML = list
     .map(
       (o) => `<tr data-id="${o.id}">
-        <td>${o.customer.name}</td>
-        <td>${o.customer.phone}</td>
-        <td>${o.items.map((i) => `${i.qty}x ${i.name}${i.variation ? ` (${i.variation})` : ""}`).join("<br>")}</td>
+        <td>${escapeHtml(o.customer.name)}</td>
+        <td>${escapeHtml(o.customer.phone)}</td>
+        <td>${o.items.map((i) => `${i.qty}x ${escapeHtml(i.name)}${i.variation ? ` (${escapeHtml(i.variation)})` : ""}`).join("<br>")}</td>
         <td>${formatBRL(o.total)}</td>
         <td>${o.payment.toUpperCase()}</td>
-        <td>
-          <select class="status-select" data-status-for="${o.id}">
-            <option value="pendente" ${o.status === "pendente" ? "selected" : ""}>Pendente</option>
-            <option value="concluido" ${o.status === "concluido" ? "selected" : ""}>Concluído</option>
-            <option value="cancelado" ${o.status === "cancelado" ? "selected" : ""}>Cancelado</option>
-          </select>
-        </td>
+        <td><span class="pill-status ${o.status}">${o.status}</span></td>
         <td>${formatDate(o.date)}</td>
-        <td></td>
+        <td>${orderQuickActionsHTML(o)}</td>
       </tr>`
     )
-    .join("") || `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Nenhum pedido ainda.</td></tr>`;
+    .join("") || `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Nenhum pedido encontrado.</td></tr>`;
 
-  tbody.querySelectorAll("[data-status-for]").forEach((select) => {
-    select.addEventListener("change", async () => {
-      await DB.updateOrderStatus(select.dataset.statusFor, select.value);
-      await loadAllData();
-      renderDashboard();
-      showToast("Status do pedido atualizado.", "success");
-    });
+  bindOrderQuickActions(tbody, () => { renderOrdersTable(); renderDashboard(); });
+}
+
+function bindOrdersFilters() {
+  document.getElementById("orders-search").addEventListener("input", (e) => {
+    ORDERS_FILTER.search = e.target.value;
+    renderOrdersTable();
   });
+  document.getElementById("orders-status-filter").addEventListener("change", (e) => {
+    ORDERS_FILTER.status = e.target.value;
+    renderOrdersTable();
+  });
+  document.getElementById("export-orders-btn").addEventListener("click", exportOrdersCSV);
+}
+
+function exportOrdersCSV() {
+  const list = filteredOrders();
+  if (!list.length) { showToast("Não há pedidos para exportar.", "error"); return; }
+  const header = ["Cliente", "Telefone", "Itens", "Total", "Pagamento", "Status", "Data"];
+  const rows = list.map((o) => [
+    o.customer.name,
+    o.customer.phone,
+    o.items.map((i) => `${i.qty}x ${i.name}${i.variation ? ` (${i.variation})` : ""}`).join(" | "),
+    o.total.toFixed(2).replace(".", ","),
+    o.payment,
+    o.status,
+    formatDate(o.date),
+  ]);
+  const csv = [header, ...rows]
+    .map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(";"))
+    .join("\r\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /* ---------------- Configurações ---------------- */
@@ -329,6 +608,12 @@ function renderConfig() {
   document.getElementById("cfg-support-email").value = s.supportEmail || "leodanialves@gmail.com";
   document.getElementById("cfg-github-repo").value = s.githubRepo || "";
   document.getElementById("cfg-github-expiry").value = s.githubTokenExpiresAt || "";
+  document.getElementById("cfg-auto-backup").checked = !!s.autoBackupGithub;
+  document.getElementById("cfg-backup-orders").checked = !!s.backupOrdersToGithub;
+
+  const tokenStatusEl = document.getElementById("github-token-status");
+  const hasTokenConfigured = s.githubTokenConfigured !== undefined ? s.githubTokenConfigured : !!s.githubToken;
+  tokenStatusEl.textContent = hasTokenConfigured ? "🔒 Token já configurado (deixe em branco pra manter o atual)." : "Nenhum token salvo ainda.";
 
   const labels = { pix: "PIX", credito: "Crédito", debito: "Débito" };
   const methods = s.paymentMethods || SEED_SETTINGS.paymentMethods;
@@ -340,7 +625,7 @@ function renderConfig() {
           <span>${labels[key]}</span>
           <input type="checkbox" data-pay-enabled="${key}" ${m.enabled ? "checked" : ""} style="width:auto;" />
         </label>
-        <textarea data-pay-details="${key}" placeholder="Detalhes exibidos em 'Ler mais'">${m.details}</textarea>
+        <textarea data-pay-details="${key}" placeholder="Detalhes exibidos em 'Ler mais'">${escapeHtml(m.details)}</textarea>
       </div>`
     )
     .join("");
@@ -350,6 +635,8 @@ function renderConfig() {
       storeName: document.getElementById("cfg-store-name").value.trim(),
       whatsappNumber: document.getElementById("cfg-whatsapp").value.trim(),
     });
+    await loadAllData();
+    await autoBackupIfEnabled();
     showToast("Configurações da loja salvas!", "success");
   };
 
@@ -362,6 +649,8 @@ function renderConfig() {
       };
     });
     await DB.saveSettings({ paymentMethods: newMethods });
+    await loadAllData();
+    await autoBackupIfEnabled();
     showToast("Formas de pagamento salvas!", "success");
   };
 
@@ -385,17 +674,35 @@ function renderConfig() {
   };
 
   document.getElementById("save-github-btn").onclick = async () => {
+    const newToken = document.getElementById("cfg-github-token").value.trim();
     await DB.saveSettings({
       githubRepo: document.getElementById("cfg-github-repo").value.trim(),
-      githubToken: document.getElementById("cfg-github-token").value.trim() || ADMIN_STATE.settings.githubToken,
+      ...(newToken ? { githubToken: newToken } : {}),
       githubTokenExpiresAt: document.getElementById("cfg-github-expiry").value,
+      autoBackupGithub: document.getElementById("cfg-auto-backup").checked,
+      backupOrdersToGithub: document.getElementById("cfg-backup-orders").checked,
     });
+    document.getElementById("cfg-github-token").value = "";
     await loadAllData();
+    renderConfig();
     checkGithubTokenExpiry();
     showToast("Configuração do GitHub salva!", "success");
   };
 
-  document.getElementById("publish-github-btn").onclick = publishToGithub;
+  document.getElementById("publish-github-btn").onclick = () => publishToGithub(true);
+}
+
+/* ---------------- Backup automático no GitHub ---------------- */
+async function autoBackupIfEnabled() {
+  const s = ADMIN_STATE.settings;
+  if (!s.autoBackupGithub) return;
+  if (!s.githubRepo) return;
+  if (!USE_API && !s.githubToken) return; // modo local precisa do token na hora
+  try {
+    await publishToGithub(false);
+  } catch {
+    // erros do backup silencioso não interrompem o fluxo do admin
+  }
 }
 
 /* ---------------- Publicação no GitHub ---------------- */
@@ -440,12 +747,11 @@ async function githubPutFile(repo, token, path, contentObj, message) {
   }
 }
 
-async function publishToGithub() {
+async function publishToGithub(showFeedback) {
   const btn = document.getElementById("publish-github-btn");
-  btn.disabled = true;
-  btn.textContent = "Publicando...";
+  if (showFeedback) { btn.disabled = true; btn.textContent = "Publicando..."; }
   try {
-    if (window.CONFIG && CONFIG.API_BASE_URL) {
+    if (USE_API) {
       const token = JSON.parse(localStorage.getItem("papelaria_admin_session") || "{}").token;
       const r = await fetch(`${CONFIG.API_BASE_URL}/github/publish`, {
         method: "POST",
@@ -455,22 +761,25 @@ async function publishToGithub() {
     } else {
       const s = ADMIN_STATE.settings;
       if (!s.githubRepo || !s.githubToken) {
-        showToast("Configure o repositório e o token do GitHub antes de publicar.", "error");
+        if (showFeedback) showToast("Configure o repositório e o token do GitHub antes de publicar.", "error");
         return;
       }
       const publicSettings = { ...s };
       delete publicSettings.githubToken;
-      delete publicSettings.adminPasswordHash; // nunca publica a senha (nem o hash dela) no repositório
+      delete publicSettings.adminPasswordHash;
 
       await githubPutFile(s.githubRepo, s.githubToken, "frontend/data/products.json", ADMIN_STATE.products, "chore: atualizar produtos via painel admin");
       await githubPutFile(s.githubRepo, s.githubToken, "frontend/data/categories.json", ADMIN_STATE.categories, "chore: atualizar categorias via painel admin");
       await githubPutFile(s.githubRepo, s.githubToken, "frontend/data/settings.json", publicSettings, "chore: atualizar configurações via painel admin");
+      if (s.backupOrdersToGithub) {
+        await githubPutFile(s.githubRepo, s.githubToken, "frontend/data/orders-backup.json", ADMIN_STATE.orders, "chore: backup de pedidos via painel admin");
+      }
     }
-    showToast("Alterações publicadas no GitHub com sucesso! 🚀", "success");
+    if (showFeedback) showToast("Alterações publicadas no GitHub com sucesso! 🚀", "success");
   } catch (e) {
-    showToast(`Erro ao publicar: ${e.message}`, "error");
+    if (showFeedback) showToast(`Erro ao publicar: ${e.message}`, "error");
+    else throw e;
   } finally {
-    btn.disabled = false;
-    btn.textContent = "🚀 Publicar alterações agora";
+    if (showFeedback) { btn.disabled = false; btn.textContent = "🚀 Publicar alterações agora"; }
   }
 }

@@ -3,6 +3,12 @@
    Simples, sem dependências nativas — fácil de rodar em qualquer
    hospedagem (Render, Railway, VPS, etc). Pode futuramente ser
    trocado por Postgres/Mongo mantendo a mesma interface (get/save).
+
+   ATENÇÃO — PERSISTÊNCIA EM HOSPEDAGENS GRATUITAS:
+   Serviços como o Render (plano free) NÃO garantem que este arquivo
+   sobreviva a reinícios do servidor (disco efêmero). Para não perder
+   dados, configure a restauração automática via GitHub
+   (veja backend/githubRestore.js e o .env.example).
    ========================================================== */
 
 const fs = require("fs");
@@ -31,9 +37,14 @@ const SEED = {
     { id: "cat-materiais", name: "Materiais", icon: "✏️", order: 2 },
   ],
   products: [
-    { id: "prod-impressao", name: "Impressão de Documento", description: "Impressão avulsa por folha A4.", price: 0.5, categoryId: "cat-impressoes", image: "🖨️", variations: ["Preto e Branco", "Colorida", "Fotográfica"], stock: null, featured: true, views: 0, order: 0 },
-    { id: "prod-bloco-notas", name: "Bloco de Notas", description: "Bloco de notas 80 folhas, capa resistente.", price: 12.9, categoryId: "cat-papelaria", image: "📓", variations: ["Pautado", "Pontilhado", "Quadriculado"], stock: 24, featured: true, views: 0, order: 1 },
-    { id: "prod-caneta", name: "Caneta Esferográfica", description: "Escrita macia, ponta 1.0mm.", price: 2.9, categoryId: "cat-materiais", image: "🖊️", variations: ["Azul", "Preta", "Vermelha"], stock: 50, featured: true, views: 0, order: 2 },
+    { id: "prod-impressao", name: "Impressão de Documento", description: "Impressão avulsa por folha A4. Preço varia pelo tipo escolhido.", price: 0.5, categoryId: "cat-impressoes", image: "🖨️", variations: [{ name: "Preto e Branco", price: 0.5, minQty: null, maxQty: null }, { name: "Colorida", price: 1.0, minQty: null, maxQty: null }, { name: "Fotográfica", price: 2.5, minQty: null, maxQty: 20 }], stock: null, minQty: 1, maxQty: null, featured: true, promo: null, views: 0, order: 0 },
+    { id: "prod-bloco-notas", name: "Bloco de Notas", description: "Bloco de notas 80 folhas, capa resistente.", price: 12.9, categoryId: "cat-papelaria", image: "📓", variations: [{ name: "Pautado", price: null, minQty: null, maxQty: null }, { name: "Pontilhado", price: null, minQty: null, maxQty: null }, { name: "Quadriculado", price: null, minQty: null, maxQty: null }], stock: 24, minQty: 1, maxQty: 10, featured: true, promo: { active: true, type: "percent", value: 15 }, views: 0, order: 1 },
+    { id: "prod-caderno", name: "Caderno Universitário", description: "10 matérias, capa dura, 200 folhas.", price: 34.9, categoryId: "cat-papelaria", image: "📔", variations: [{ name: "Pautado", price: null, minQty: null, maxQty: null }, { name: "Quadriculado", price: null, minQty: null, maxQty: null }], stock: 10, minQty: 1, maxQty: null, featured: false, promo: null, views: 0, order: 2 },
+    { id: "prod-borracha", name: "Borracha", description: "Borracha macia, não mancha o papel.", price: 2.5, categoryId: "cat-materiais", image: "🧼", variations: [], stock: 40, minQty: 1, maxQty: null, featured: false, promo: null, views: 0, order: 3 },
+    { id: "prod-lapis", name: "Lápis Grafite", description: "Lápis HB nº2, ideal para uso diário. Venda mínima de 2 unidades.", price: 1.8, categoryId: "cat-materiais", image: "✏️", variations: [], stock: 60, minQty: 2, maxQty: null, featured: false, promo: null, views: 0, order: 4 },
+    { id: "prod-caneta", name: "Caneta Esferográfica", description: "Escrita macia, ponta 1.0mm.", price: 2.9, categoryId: "cat-materiais", image: "🖊️", variations: [{ name: "Azul", price: null, minQty: null, maxQty: null }, { name: "Preta", price: null, minQty: null, maxQty: null }, { name: "Vermelha", price: null, minQty: null, maxQty: 5 }], stock: 50, minQty: 1, maxQty: null, featured: true, promo: null, views: 0, order: 5 },
+    { id: "prod-marca-texto", name: "Marca-texto", description: "Cores vibrantes, ponta chanfrada.", price: 4.5, categoryId: "cat-materiais", image: "🖍️", variations: [{ name: "Amarelo", price: null, minQty: null, maxQty: null }, { name: "Verde", price: null, minQty: null, maxQty: null }, { name: "Rosa", price: null, minQty: null, maxQty: null }, { name: "Laranja", price: null, minQty: null, maxQty: null }], stock: 30, minQty: 1, maxQty: null, featured: false, promo: null, views: 0, order: 6 },
+    { id: "prod-cola", name: "Cola Bastão", description: "Cola bastão 20g, seca rápido e não escorre.", price: 5.9, categoryId: "cat-materiais", image: "🧴", variations: [], stock: 3, minQty: 1, maxQty: null, featured: false, promo: null, views: 0, order: 7 },
   ],
   orders: [],
   settings: {
@@ -49,6 +60,8 @@ const SEED = {
     githubRepo: "",
     githubTokenExpiresAt: "",
     supportEmail: "leodanialves@gmail.com",
+    autoBackupGithub: false,
+    backupOrdersToGithub: false,
   },
   stats: { visits: 0 },
 };
@@ -68,4 +81,4 @@ function writeDb(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-module.exports = { readDb, writeDb, hashPassword, verifyPassword };
+module.exports = { readDb, writeDb, hashPassword, verifyPassword, SEED, DB_FILE };

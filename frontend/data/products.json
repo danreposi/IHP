@@ -3,7 +3,7 @@
     "id": "prod-impressao",
     "name": "Impressão de Documento",
     "description": "Impressão avulsa por folha A4.",
-    "price": 0.5,
+    "price": 1,
     "categoryId": "cat-impressoes",
     "image": "🖨️",
     "variations": [

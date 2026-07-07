@@ -10,24 +10,12 @@ let STATE = {
   settings: {},
   activeCategory: "all",
   searchTerm: "",
-  cart: [], // { productId, name, price, variation, qty, image }
+  cart: [], // { key, productId, name, price, variationName, qty, image }
   variationTarget: null, // produto em edição no modal de variação
-  selectedVariation: null,
+  selectedVariation: null, // objeto normalizado {name, price, minQty, maxQty} ou null
   variationQty: 1,
   selectedPayment: "pix",
 };
-
-function formatBRL(value) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function showToast(message, type = "") {
-  const toast = document.getElementById("toast");
-  toast.textContent = message;
-  toast.className = `toast show ${type}`;
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => toast.classList.remove("show"), 2600);
-}
 
 /* ---------------- Inicialização ---------------- */
 async function initStore() {
@@ -57,7 +45,7 @@ function renderCategoryNav() {
   const pills = [{ id: "all", name: "Todas", icon: "🗂️" }, ...STATE.categories];
   nav.innerHTML = pills
     .map(
-      (c) => `<button class="cat-pill ${STATE.activeCategory === c.id ? "active" : ""}" data-cat="${c.id}">${c.icon || ""} ${c.name}</button>`
+      (c) => `<button class="cat-pill ${STATE.activeCategory === c.id ? "active" : ""}" data-cat="${escapeHtml(c.id)}">${escapeHtml(c.icon || "")} ${escapeHtml(c.name)}</button>`
     )
     .join("");
   nav.querySelectorAll(".cat-pill").forEach((btn) => {
@@ -73,24 +61,33 @@ function renderCategoryNav() {
 /* ---------------- Produtos ---------------- */
 function productCardHTML(p) {
   const cat = STATE.categories.find((c) => c.id === p.categoryId);
-  const lowStock = typeof p.stock === "number" && p.stock <= 5;
+  const outOfStock = typeof p.stock === "number" && p.stock <= 0;
+  const lowStock = typeof p.stock === "number" && p.stock > 0 && p.stock <= 5;
   const image = p.image && p.image.startsWith("http")
-    ? `<img src="${p.image}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;" />`
-    : (p.image || "📦");
+    ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover;" />`
+    : escapeHtml(p.image || "📦");
+
+  const hasPromo = p.promo && p.promo.active;
+  const finalPrice = basePriceOf(p);
+  const priceHTML = hasPromo
+    ? `<span class="product-price">${formatBRL(finalPrice)}</span> <span style="text-decoration:line-through;color:var(--text-muted);font-size:.78rem;">${formatBRL(p.price)}</span>`
+    : `<span class="product-price">${formatBRL(p.price)}</span>`;
+
   return `
   <article class="product-card" data-product="${p.id}">
     <div class="product-thumb">
       ${p.featured ? '<span class="badge-featured">Destaque</span>' : ""}
-      ${lowStock ? '<span class="badge-stock-low">Últimas unidades</span>' : ""}
+      ${hasPromo ? '<span class="badge-featured" style="left:auto; right:8px; background:var(--danger);">OFERTA</span>' : ""}
+      ${outOfStock ? '<span class="badge-stock-low">Esgotado</span>' : lowStock ? '<span class="badge-stock-low">Últimas unidades</span>' : ""}
       ${image}
     </div>
     <div class="product-body">
-      <span class="product-cat">${cat ? cat.name : ""}</span>
-      <h3 class="product-name">${p.name}</h3>
-      <p class="product-desc">${p.description || ""}</p>
+      <span class="product-cat">${escapeHtml(cat ? cat.name : "")}</span>
+      <h3 class="product-name">${escapeHtml(p.name)}</h3>
+      <p class="product-desc">${escapeHtml(p.description || "")}</p>
       <div class="product-footer">
-        <span class="product-price">${formatBRL(p.price)}</span>
-        <button class="btn btn-navy btn-sm" data-open-product="${p.id}">Escolher</button>
+        <span>${priceHTML}</span>
+        <button class="btn btn-navy btn-sm" data-open-product="${p.id}" ${outOfStock ? "disabled" : ""}>${outOfStock ? "Esgotado" : "Escolher"}</button>
       </div>
     </div>
   </article>`;
@@ -143,38 +140,66 @@ function openVariationModal(productId) {
   DB.registerProductView(productId);
 
   STATE.variationTarget = product;
-  STATE.variationQty = 1;
-  STATE.selectedVariation = product.variations && product.variations.length ? product.variations[0] : null;
+  const variations = normalizeVariations(product.variations);
+  STATE.selectedVariation = variations.length ? variations[0] : null;
+  STATE.variationQty = effectiveMinQty(product, STATE.selectedVariation);
 
   document.getElementById("variation-product-name").textContent = product.name;
   document.getElementById("variation-product-desc").textContent = product.description || "";
   document.getElementById("variation-qty").textContent = STATE.variationQty;
 
   const optionsWrap = document.getElementById("variation-options");
-  if (product.variations && product.variations.length) {
+  if (variations.length) {
     optionsWrap.parentElement.classList.remove("hidden");
-    optionsWrap.innerHTML = product.variations
-      .map((v) => `<button type="button" class="variation-chip ${v === STATE.selectedVariation ? "selected" : ""}" data-variation="${v}">${v}</button>`)
+    optionsWrap.innerHTML = variations
+      .map((v) => {
+        const priceTag = v.price != null ? ` (${formatBRL(v.price)})` : "";
+        return `<button type="button" class="variation-chip ${v.name === STATE.selectedVariation.name ? "selected" : ""}" data-variation="${escapeHtml(v.name)}">${escapeHtml(v.name)}${priceTag}</button>`;
+      })
       .join("");
     optionsWrap.querySelectorAll(".variation-chip").forEach((chip) => {
       chip.addEventListener("click", () => {
-        STATE.selectedVariation = chip.dataset.variation;
+        STATE.selectedVariation = variations.find((v) => v.name === chip.dataset.variation);
+        STATE.variationQty = effectiveMinQty(product, STATE.selectedVariation);
+        document.getElementById("variation-qty").textContent = STATE.variationQty;
         optionsWrap.querySelectorAll(".variation-chip").forEach((c) => c.classList.toggle("selected", c === chip));
+        updateVariationPriceHint();
       });
     });
   } else {
     optionsWrap.parentElement.classList.add("hidden");
   }
 
+  updateVariationPriceHint();
   openModal("variation-modal");
+}
+
+function updateVariationPriceHint() {
+  const product = STATE.variationTarget;
+  if (!product) return;
+  const unitPrice = effectivePrice(product, STATE.selectedVariation);
+  const min = effectiveMinQty(product, STATE.selectedVariation);
+  const max = effectiveMaxQty(product, STATE.selectedVariation);
+  let hint = `${formatBRL(unitPrice)} / unidade`;
+  if (min > 1) hint += ` · mínimo ${min} un.`;
+  if (max != null) hint += ` · máximo ${max} un.`;
+  const hintEl = document.getElementById("variation-price-hint");
+  if (hintEl) hintEl.textContent = hint;
 }
 
 function bindVariationStepper() {
   document.getElementById("variation-qty-stepper").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-step]");
     if (!btn) return;
+    const product = STATE.variationTarget;
+    if (!product) return;
+    const min = effectiveMinQty(product, STATE.selectedVariation);
+    const max = effectiveMaxQty(product, STATE.selectedVariation);
     const step = parseInt(btn.dataset.step, 10);
-    STATE.variationQty = Math.max(1, STATE.variationQty + step);
+    let next = STATE.variationQty + step;
+    next = Math.max(min, next);
+    if (max != null) next = Math.min(max, next);
+    STATE.variationQty = next;
     document.getElementById("variation-qty").textContent = STATE.variationQty;
   });
 
@@ -185,6 +210,16 @@ function bindVariationStepper() {
       showToast("Produto sem estoque no momento.", "error");
       return;
     }
+    const min = effectiveMinQty(product, STATE.selectedVariation);
+    const max = effectiveMaxQty(product, STATE.selectedVariation);
+    if (STATE.variationQty < min) {
+      showToast(`A quantidade mínima para este produto é ${min}.`, "error");
+      return;
+    }
+    if (max != null && STATE.variationQty > max) {
+      showToast(`A quantidade máxima para este produto é ${max}.`, "error");
+      return;
+    }
     addToCart(product, STATE.selectedVariation, STATE.variationQty);
     closeModal("variation-modal");
     showToast(`${product.name} adicionado ao carrinho!`, "success");
@@ -193,8 +228,9 @@ function bindVariationStepper() {
 
 /* ---------------- Carrinho ---------------- */
 function addToCart(product, variation, qty) {
-  const key = `${product.id}::${variation || "-"}`;
+  const key = `${product.id}::${variation ? variation.name : "-"}`;
   const existing = STATE.cart.find((i) => i.key === key);
+  const unitPrice = effectivePrice(product, variation);
   if (existing) {
     existing.qty += qty;
   } else {
@@ -202,8 +238,8 @@ function addToCart(product, variation, qty) {
       key,
       productId: product.id,
       name: product.name,
-      price: product.price,
-      variation,
+      price: unitPrice,
+      variation: variation ? variation.name : null,
       image: product.image,
       qty,
     });
@@ -218,10 +254,22 @@ function removeFromCart(key) {
   updateCartUI();
 }
 
+function limitsForCartItem(item) {
+  const product = STATE.products.find((p) => p.id === item.productId);
+  if (!product) return { min: 1, max: null };
+  const variations = normalizeVariations(product.variations);
+  const variation = item.variation ? variations.find((v) => v.name === item.variation) : null;
+  return { min: effectiveMinQty(product, variation), max: effectiveMaxQty(product, variation) };
+}
+
 function changeCartQty(key, delta) {
   const item = STATE.cart.find((i) => i.key === key);
   if (!item) return;
-  item.qty = Math.max(1, item.qty + delta);
+  const { min, max } = limitsForCartItem(item);
+  let next = item.qty + delta;
+  next = Math.max(min, next);
+  if (max != null) next = Math.min(max, next);
+  item.qty = next;
   DB.saveCart(STATE.cart);
   updateCartUI();
 }
@@ -243,11 +291,11 @@ function updateCartUI() {
     itemsWrap.innerHTML = STATE.cart
       .map(
         (i) => `
-      <div class="cart-item" data-key="${i.key}">
-        <div class="cart-item-thumb">${i.image && i.image.startsWith("http") ? `<img src="${i.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : i.image || "📦"}</div>
+      <div class="cart-item" data-key="${escapeHtml(i.key)}">
+        <div class="cart-item-thumb">${i.image && i.image.startsWith("http") ? `<img src="${escapeHtml(i.image)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : escapeHtml(i.image || "📦")}</div>
         <div class="cart-item-info">
-          <div class="cart-item-name">${i.name}</div>
-          ${i.variation ? `<div class="cart-item-variant">${i.variation}</div>` : ""}
+          <div class="cart-item-name">${escapeHtml(i.name)}</div>
+          ${i.variation ? `<div class="cart-item-variant">${escapeHtml(i.variation)}</div>` : ""}
           <div class="cart-item-row">
             <div class="qty-stepper">
               <button data-cart-step="-1">−</button>
@@ -279,16 +327,6 @@ function toggleCartDrawer(open) {
   document.getElementById("cart-drawer").classList.toggle("open", open);
 }
 
-/* ---------------- Modal genérico ---------------- */
-function openModal(id) {
-  document.getElementById(id).classList.add("open");
-  document.getElementById("overlay").classList.add("open");
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove("open");
-  document.getElementById("overlay").classList.remove("open");
-}
-
 /* ---------------- Checkout ---------------- */
 function renderPaymentOptions() {
   const methods = STATE.settings.paymentMethods || SEED_SETTINGS.paymentMethods;
@@ -303,7 +341,7 @@ function renderPaymentOptions() {
           <label><input type="radio" name="payment" ${STATE.selectedPayment === key ? "checked" : ""} style="margin-right:8px;" />${labels[key]}</label>
           <button type="button" class="link-btn" data-readmore="${key}">Ler mais</button>
         </div>
-        <p class="payment-option-details ${STATE.selectedPayment === key ? "" : ""}" id="details-${key}">${m.details}</p>
+        <p class="payment-option-details" id="details-${key}">${escapeHtml(m.details)}</p>
       </div>`
     )
     .join("");

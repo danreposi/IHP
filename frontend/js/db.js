@@ -25,10 +25,6 @@ async function hashText(text) {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function uid(prefix = "id") {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 /* ---------- helpers localStorage ---------- */
 function lsGet(key, fallback) {
   const raw = localStorage.getItem(key);

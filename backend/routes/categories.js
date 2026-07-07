@@ -1,6 +1,7 @@
 const express = require("express");
 const { readDb, writeDb } = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { scheduleBackup } = require("../githubBackup");
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.put("/", requireAuth, (req, res) => {
   const db = readDb();
   db.categories = req.body;
   writeDb(db);
+  scheduleBackup(readDb);
   res.json(db.categories);
 });
 
@@ -25,6 +27,7 @@ router.post("/", requireAuth, (req, res) => {
   const newCat = { id: uid("cat"), order: db.categories.length, ...req.body };
   db.categories.push(newCat);
   writeDb(db);
+  scheduleBackup(readDb);
   res.status(201).json(newCat);
 });
 
@@ -32,6 +35,7 @@ router.delete("/:id", requireAuth, (req, res) => {
   const db = readDb();
   db.categories = db.categories.filter((c) => c.id !== req.params.id);
   writeDb(db);
+  scheduleBackup(readDb);
   res.status(204).end();
 });
 

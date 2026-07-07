@@ -53,11 +53,17 @@
     <section id="tab-dashboard">
       <div class="admin-topbar"><h2>Dashboard</h2></div>
       <div class="stat-grid" id="stat-grid"></div>
+
+      <div class="panel">
+        <h3>Vendas dos últimos 7 dias</h3>
+        <div id="sales-chart"></div>
+      </div>
+
       <div class="panel">
         <h3>Pedidos recentes</h3>
         <div style="overflow-x:auto;">
           <table class="data-table" id="recent-orders-table">
-            <thead><tr><th>Cliente</th><th>Itens</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Itens</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th><th>Ação rápida</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -73,7 +79,7 @@
       <div class="panel">
         <div style="overflow-x:auto;">
           <table class="data-table">
-            <thead><tr><th></th><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Destaque</th><th>Visualizações</th><th></th></tr></thead>
+            <thead><tr><th></th><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Limite</th><th>Destaque</th><th>Promo</th><th>Visualizações</th><th></th></tr></thead>
             <tbody id="products-table-body"></tbody>
           </table>
         </div>
@@ -96,11 +102,23 @@
 
     <!-- PEDIDOS -->
     <section id="tab-pedidos" class="hidden">
-      <div class="admin-topbar"><h2>Pedidos</h2></div>
+      <div class="admin-topbar">
+        <h2>Pedidos</h2>
+        <button class="btn btn-ghost" id="export-orders-btn">⬇️ Exportar CSV</button>
+      </div>
       <div class="panel">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <input type="text" id="orders-search" placeholder="Buscar por nome ou telefone..." style="flex:1; min-width:200px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text);" />
+          <select id="orders-status-filter" style="padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text);">
+            <option value="todos">Todos os status</option>
+            <option value="pendente">Pendente</option>
+            <option value="concluido">Concluído</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
         <div style="overflow-x:auto;">
           <table class="data-table">
-            <thead><tr><th>Cliente</th><th>Telefone</th><th>Itens</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th><th></th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Telefone</th><th>Itens</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Data</th><th>Ação rápida</th></tr></thead>
             <tbody id="orders-table-body"></tbody>
           </table>
         </div>
@@ -144,12 +162,30 @@
       <div class="panel">
         <p class="product-desc">Configure um <b>Personal Access Token (PAT)</b> do GitHub para publicar automaticamente as alterações do site no seu repositório. <a href="https://github.com/settings/tokens" target="_blank" rel="noopener" class="link-btn">Criar um token</a></p>
         <div class="field"><label>Repositório (ex: usuario/repositorio)</label><input type="text" id="cfg-github-repo" placeholder="seu-usuario/papelaria-site" /></div>
-        <div class="field"><label>Token de acesso (PAT)</label><input type="password" id="cfg-github-token" placeholder="ghp_..." /></div>
+        <div class="field">
+          <label>Token de acesso (PAT)</label>
+          <input type="password" id="cfg-github-token" placeholder="ghp_..." />
+          <p class="product-desc" id="github-token-status" style="margin-top:4px; font-size:.76rem;"></p>
+        </div>
         <div class="field"><label>Data de expiração do token</label><input type="date" id="cfg-github-expiry" /></div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="cfg-auto-backup" style="width:auto;" />
+            Fazer backup automático a cada alteração (produtos/categorias/config)
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="cfg-backup-orders" style="width:auto;" />
+            Incluir pedidos no backup automático <span style="color:var(--danger); font-weight:700;">(só use se o repositório for PRIVADO — pedidos têm dados de clientes)</span>
+          </label>
+        </div>
         <button class="btn btn-navy" id="save-github-btn">Salvar configuração</button>
         <button class="btn btn-accent" id="publish-github-btn" style="margin-left:8px;">🚀 Publicar alterações agora</button>
         <p id="github-warning" class="product-desc hidden" style="color:var(--danger); margin-top:12px;"></p>
-        <p class="product-desc" style="margin-top:14px; font-size:.78rem;">⚠️ No modo local (sem backend rodando), a publicação usa a API do GitHub diretamente pelo navegador para enviar os arquivos <code>products.json</code>, <code>categories.json</code> e <code>settings.json</code> ao repositório.</p>
+        <p class="product-desc" style="margin-top:14px; font-size:.78rem;">
+          💡 Isso também protege contra o "reset" de hospedagens gratuitas (como o Render): o servidor restaura automaticamente os últimos dados publicados no GitHub sempre que reinicia do zero.
+        </p>
       </div>
     </section>
 
@@ -164,14 +200,50 @@
     <input type="hidden" id="product-id" />
     <div class="field"><label>Nome</label><input type="text" id="product-name" /></div>
     <div class="field"><label>Descrição</label><textarea id="product-description"></textarea></div>
-    <div class="field"><label>Preço (R$)</label><input type="number" step="0.01" min="0" id="product-price" /></div>
+    <div class="field"><label>Preço base (R$)</label><input type="number" step="0.01" min="0" id="product-price" /></div>
     <div class="field"><label>Categoria</label><select id="product-category"></select></div>
-    <div class="field"><label>Imagem (emoji ou URL)</label><input type="text" id="product-image" placeholder="📦 ou https://..." /></div>
-    <div class="field"><label>Estoque (deixe vazio para não controlar)</label><input type="number" min="0" id="product-stock" /></div>
+
     <div class="field">
-      <label>Variações (separe por vírgula)</label>
-      <input type="text" id="product-variations" placeholder="Ex: Pautado, Pontilhado, Quadriculado" />
+      <label>Imagem</label>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <label style="display:flex; align-items:center; gap:4px; font-weight:600; font-size:.82rem;"><input type="radio" name="image-type" value="emoji" id="image-type-emoji" style="width:auto;" />Emoji</label>
+        <label style="display:flex; align-items:center; gap:4px; font-weight:600; font-size:.82rem;"><input type="radio" name="image-type" value="url" id="image-type-url" style="width:auto;" />URL de imagem</label>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="text" id="product-image" placeholder="📦 ou https://..." style="flex:1;" />
+        <div id="product-image-preview" style="width:44px; height:44px; border-radius:8px; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; overflow:hidden; border:1px solid var(--border);">📦</div>
+      </div>
     </div>
+
+    <div class="field"><label>Estoque (deixe vazio para não controlar)</label><input type="number" min="0" id="product-stock" /></div>
+
+    <div class="field" style="display:flex; gap:10px;">
+      <div style="flex:1;"><label>Compra mínima</label><input type="number" min="1" id="product-min-qty" placeholder="1" /></div>
+      <div style="flex:1;"><label>Compra máxima (vazio = sem limite)</label><input type="number" min="1" id="product-max-qty" placeholder="Sem limite" /></div>
+    </div>
+
+    <div class="field" style="border:1px solid var(--border); border-radius:10px; padding:12px;">
+      <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="product-promo-active" style="width:auto;" />
+        Produto em promoção
+      </label>
+      <div id="promo-fields" style="display:flex; gap:10px; margin-top:10px;">
+        <select id="product-promo-type" style="flex:1;">
+          <option value="percent">Desconto (%)</option>
+          <option value="fixed">Desconto (R$)</option>
+        </select>
+        <input type="number" min="0" step="0.01" id="product-promo-value" placeholder="Valor" style="flex:1;" />
+      </div>
+      <p class="product-desc mono" id="promo-preview" style="margin-top:8px;"></p>
+    </div>
+
+    <div class="field">
+      <label>Variações</label>
+      <div id="variations-editor"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="add-variation-btn" style="margin-top:8px;">+ Adicionar variação</button>
+      <p class="product-desc" style="font-size:.74rem; margin-top:6px;">Deixe preço/mín./máx. em branco para usar o valor do produto.</p>
+    </div>
+
     <div class="field">
       <label><input type="checkbox" id="product-featured" style="width:auto; margin-right:6px;" />Produto em destaque</label>
     </div>
@@ -195,6 +267,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/config.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/seed.js"></script>
 <script src="js/db.js"></script>
 <script src="js/theme.js"></script>

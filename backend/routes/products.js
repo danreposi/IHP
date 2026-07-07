@@ -1,6 +1,7 @@
 const express = require("express");
 const { readDb, writeDb } = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { scheduleBackup } = require("../githubBackup");
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.put("/", requireAuth, (req, res) => {
   const db = readDb();
   db.products = req.body;
   writeDb(db);
+  scheduleBackup(readDb);
   res.json(db.products);
 });
 
@@ -25,6 +27,7 @@ router.post("/", requireAuth, (req, res) => {
   const newProd = { id: uid("prod"), views: 0, order: db.products.length, ...req.body };
   db.products.push(newProd);
   writeDb(db);
+  scheduleBackup(readDb);
   res.status(201).json(newProd);
 });
 
@@ -34,6 +37,7 @@ router.patch("/:id", requireAuth, (req, res) => {
   if (idx === -1) return res.status(404).json({ message: "Produto não encontrado." });
   db.products[idx] = { ...db.products[idx], ...req.body };
   writeDb(db);
+  scheduleBackup(readDb);
   res.json(db.products[idx]);
 });
 
@@ -41,6 +45,7 @@ router.delete("/:id", requireAuth, (req, res) => {
   const db = readDb();
   db.products = db.products.filter((p) => p.id !== req.params.id);
   writeDb(db);
+  scheduleBackup(readDb);
   res.status(204).end();
 });
 
@@ -51,6 +56,8 @@ router.post("/:id/view", (req, res) => {
   if (idx >= 0) {
     db.products[idx].views = (db.products[idx].views || 0) + 1;
     writeDb(db);
+    // não agenda backup aqui: visualização não é uma mudança de catálogo,
+    // e isso evitaria disparar um commit a cada clique de cliente
   }
   res.status(204).end();
 });
