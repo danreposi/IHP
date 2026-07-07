@@ -63,7 +63,8 @@
   --text-muted: #A2A9BC;
   --border: #2A3145;
   --dot-color: rgba(140,160,230,.08);
-  color-scheme: dark;
+   
+  color-scheme: light;
 }
 
 *{box-sizing:border-box;}
