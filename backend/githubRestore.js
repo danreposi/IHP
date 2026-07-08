@@ -14,10 +14,12 @@
    arquivos "crus" via raw.githubusercontent.com).
    ========================================================== */
 
+
 const fs = require("fs");
 const path = require("path");
 const { DB_FILE, SEED, hashPassword } = require("./db");
-
+GITHUB_BACKUP_REPO=danireposi/IHP
+GITHUB_BACKUP_BRANCH=main   (opcional, padrão "main")
 async function fetchJsonSafe(url) {
   try {
     const res = await fetch(url);
