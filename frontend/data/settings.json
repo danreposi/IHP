@@ -18,6 +18,6 @@
   "githubRepo": "danreposi/IHP",
   "githubTokenExpiresAt": "2026-10-07",
   "supportEmail": "leodanialves@gmail.com",
-  "autoBackupGithub": false,
+  "autoBackupGithub": true,
   "backupOrdersToGithub": false
 }
