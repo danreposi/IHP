@@ -5,7 +5,21 @@ const { restoreFromGithubIfNeeded } = require("./githubRestore");
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
+const allowedOrigins = [
+  "https://impressoesnahora.com.br",
+  "https://www.impressoesnahora.com.br"
+];
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Bloqueado pelo CORS"));
+  }
+}));
+
 app.use(express.json());
 
 app.get("/api/health", (req, res) => res.json({ ok: true, service: "papelaria-backend" }));
@@ -19,7 +33,7 @@ app.use("/api/stats", require("./routes/stats"));
 app.use("/api/github", require("./routes/github"));
 
 app.use((req, res) => res.status(404).json({ message: "Rota não encontrada." }));
-// eslint-disable-next-line no-unused-vars
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: "Erro interno no servidor." });
@@ -27,8 +41,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Antes de subir o servidor, tenta restaurar o último backup do GitHub caso
-// o banco de dados local não exista ainda (disco zerado, ex: Render free tier).
 restoreFromGithubIfNeeded()
   .catch((e) => console.error("⚠️ Falha ao tentar restaurar do GitHub:", e.message))
   .finally(() => {
